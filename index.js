@@ -1399,7 +1399,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       });
     }
 
-    // Chọn sản phẩm → CHỈ hiện dropdown số lượng
+    // Chọn sản phẩm → CHỈ hiện dropdown số lượng (XÓA dropdown danh mục)
     if (interaction.isStringSelectMenu() && interaction.customId.startsWith('sel_product_')) {
       const productId = Number(interaction.values[0]);
       const product = qProducts.allActive().find(p => p.id === productId);
@@ -1426,10 +1426,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
         .addOptions([...Array(maxQty)].map((_, i) => ({ label: String(i + 1), value: String(i + 1) })));
       const rowQty = new ActionRowBuilder().addComponents(qtyMenu);
 
-      // Hiện dropdown danh mục + dropdown số lượng (xóa dropdown sản phẩm)
+      // CHỈ hiện dropdown số lượng (XÓA dropdown danh mục để tránh conflict)
       return interaction.update({
         content: `**${product.name}** — ${formatPrice(product)}\nCòn **${rem} key**. Chọn **số lượng**:`,
-        components: [buildCategoryRow(), rowQty]
+        components: [rowQty]
       });
     }
 
