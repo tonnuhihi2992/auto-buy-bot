@@ -1433,17 +1433,17 @@ client.on(Events.InteractionCreate, async (interaction) => {
       });
     }
 
-    // Chọn số lượng → XÓA message và hiện modal nhập mã giảm giá
+    // Chọn số lượng → Show modal nhập mã giảm giá
     if (interaction.isStringSelectMenu() && interaction.customId.startsWith('sel_qty_')) {
       const productId = Number(interaction.customId.split('_')[2]);
       const qty = Number(interaction.values[0]);
 
       const product = qProducts.allActive().find(p => p.id === productId);
-      if (!product) return interaction.update({ content: 'Sản phẩm không tồn tại.', components: [buildCategoryRow()] });
+      if (!product) return interaction.reply({ ephemeral: true, content: 'Sản phẩm không tồn tại.' });
 
       const remNow = remainKeys(productId);
-      if (remNow <= 0) return interaction.update({ content: `❌ ${product.name} đã **hết hàng**.`, components: [buildCategoryRow()] });
-      if (qty > remNow) return interaction.update({ content: `❌ Chỉ còn **${remNow} key**. Vui lòng chọn lại số lượng ≤ ${remNow}.`, components: [buildCategoryRow()] });
+      if (remNow <= 0) return interaction.reply({ ephemeral: true, content: `❌ ${product.name} đã **hết hàng**.` });
+      if (qty > remNow) return interaction.reply({ ephemeral: true, content: `❌ Chỉ còn **${remNow} key**. Vui lòng chọn lại số lượng ≤ ${remNow}.` });
 
       // Show modal for coupon code (store messageId to update later)
       const modal = new ModalBuilder()
@@ -1464,11 +1464,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     // Handle coupon modal → create order
     if (interaction.isModalSubmit() && interaction.customId.startsWith('modal_coupon_')) {
+      console.log('🎫 Modal coupon submitted:', interaction.customId);
       const parts = interaction.customId.split('_');
       const productId = parts[2];
       const qty = parts[3];
       const messageId = parts[4]; // Get the original message ID
       const couponCode = interaction.fields.getTextInputValue('coupon_code').trim();
+      
+      console.log(`📦 Creating order: Product ${productId}, Qty ${qty}, Coupon: ${couponCode || 'none'}`);
 
       // Update the original message to show only category dropdown
       try {
@@ -1483,11 +1486,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
       }
 
       const product = qProducts.allActive().find(p => p.id === Number(productId));
-      if (!product) return interaction.reply({ ephemeral: true, content: 'Sản phẩm không tồn tại.' });
+      if (!product) {
+        console.error('❌ Product not found:', productId);
+        return interaction.reply({ ephemeral: true, content: 'Sản phẩm không tồn tại.' });
+      }
 
       // Check if user has existing QR - delete it first
       const userId = interaction.user.id;
       if (activeQRMessages.has(userId)) {
+        console.log('🗑️ Deleting old QR for user:', userId);
         const oldQrData = activeQRMessages.get(userId);
         try {
           // Delete old QR message from channel
@@ -1505,6 +1512,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       // Reply ephemeral to acknowledge
       await interaction.reply({ ephemeral: true, content: '⏳ Đang tạo mã QR thanh toán...' });
+      console.log('✅ Acknowledged, generating QR...');
 
       const orderId = newOrderId();
       let baseAmount = calcFinalPrice(product) * Number(qty);
@@ -1524,28 +1532,39 @@ client.on(Events.InteractionCreate, async (interaction) => {
         }
       }
 
-      qOrders.insert.run(orderId, interaction.user.id, interaction.channelId, Number(productId), Number(qty), finalAmount, 'PENDING', null, new Date().toISOString());
+      qOrders.insert.run(orderId, interaction.user.id, interaction.channelId, Number(productId), Number(qty), finalAmount, 'PENDING', null, Math.floor(Date.now() / 1000));
+      console.log(`📝 Order created: ${orderId}, Amount: ${finalAmount}`);
 
-      const qrBuf = await buildPaymentQR({ orderId, amount: finalAmount });
-      const file = new AttachmentBuilder(qrBuf, { name: `${orderId}.png` });
-      const embed = paymentEmbed(orderId, finalAmount)
-        .setDescription(`Sản phẩm: **${product.name}** x${qty}\nTổng tiền gốc: ${baseAmount.toLocaleString()}đ${couponInfo}\n\n**Tổng thanh toán: ${finalAmount.toLocaleString()}đ**\n\n⏰ QR sẽ hết hạn sau **3 phút**`)
-        .setImage(`attachment://${orderId}.png`);
-      
-      // Send QR to channel (not ephemeral) so we can delete it later
-      const channel = await client.channels.fetch(interaction.channelId);
-      const qrMessage = await channel.send({ 
-        content: `<@${interaction.user.id}>`,
-        embeds: [embed], 
-        files: [file] 
-      });
+      try {
+        const qrBuf = await buildPaymentQR({ orderId, amount: finalAmount });
+        console.log(`✅ QR generated, size: ${qrBuf.length} bytes`);
+        
+        const file = new AttachmentBuilder(qrBuf, { name: `${orderId}.png` });
+        const embed = paymentEmbed(orderId, finalAmount)
+          .setDescription(`Sản phẩm: **${product.name}** x${qty}\nTổng tiền gốc: ${baseAmount.toLocaleString()}đ${couponInfo}\n\n**Tổng thanh toán: ${finalAmount.toLocaleString()}đ**\n\n⏰ QR sẽ hết hạn sau **3 phút**`)
+          .setImage(`attachment://${orderId}.png`);
+        
+        // Send QR to channel (not ephemeral) so we can delete it later
+        const channel = await client.channels.fetch(interaction.channelId);
+        const qrMessage = await channel.send({ 
+          content: `<@${interaction.user.id}>`,
+          embeds: [embed], 
+          files: [file] 
+        });
+        
+        console.log(`✅ QR message sent: ${qrMessage.id}`);
 
-      // Track QR message for this user
-      activeQRMessages.set(interaction.user.id, { messageId: qrMessage.id, orderId });
+        // Track QR message for this user
+        activeQRMessages.set(interaction.user.id, { messageId: qrMessage.id, orderId });
 
-      // Increment coupon usage if applied
-      if (appliedCoupon) {
-        db.prepare('UPDATE coupons SET used_count = used_count + 1 WHERE code = ?').run(appliedCoupon);
+        // Increment coupon usage if applied
+        if (appliedCoupon) {
+          db.prepare('UPDATE coupons SET used_count = used_count + 1 WHERE code = ?').run(appliedCoupon);
+        }
+      } catch (e) {
+        console.error('❌ Error generating/sending QR:', e);
+        await interaction.followUp({ ephemeral: true, content: `❌ Lỗi tạo QR: ${e.message}` });
+        return;
       }
 
       // Store messageId and channelId for timeout closure
