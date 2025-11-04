@@ -1375,6 +1375,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
         return interaction.update({
           content: 'Danh mục này chưa có sản phẩm. Vui lòng chọn danh mục khác.',
           components: [buildCategoryRow()]
+        }).catch(err => {
+          console.error('Update failed:', err.message);
         });
       }
 
@@ -1396,6 +1398,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return interaction.update({
         content: 'Chọn **sản phẩm**:',
         components: [buildCategoryRow(), rowProducts]
+      }).catch(err => {
+        console.error('Update failed:', err.message);
       });
     }
 
@@ -1621,8 +1625,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
   } catch (e) {
     console.error('Interaction error:', e);
-    if (interaction.isRepliable()) {
-      try { await interaction.reply({ ephemeral: true, content: 'Có lỗi xảy ra, thử lại nhé.' }); } catch {}
+    // Don't crash on interaction errors
+    if (!interaction.replied && !interaction.deferred && interaction.isRepliable()) {
+      try { 
+        await interaction.reply({ ephemeral: true, content: '❌ Có lỗi xảy ra. Vui lòng thử lại!' }).catch(() => {}); 
+      } catch {}
     }
   }
 });
