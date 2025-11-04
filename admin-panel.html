@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Auto Buy Bot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .panel {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        textarea {
+            min-height: 150px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .file-upload {
+            border: 2px dashed #667eea;
+            padding: 30px;
+            text-align: center;
+            border-radius: 8px;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .file-upload:hover {
+            background: #eef0ff;
+        }
+        .file-upload input[type="file"] {
+            display: none;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-card h3 {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+        .stat-card p {
+            opacity: 0.9;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            height: 20px;
+            width: 20px;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        .tab.active {
+            background: white;
+            color: #667eea;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .key-preview {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛠️ Admin Panel - Auto Buy Bot</h1>
+
+        <div class="panel">
+            <div id="alert" class="alert" style="display: none; position: relative;"></div>
+            
+            <div class="stats" id="stats">
+                <div class="stat-card">
+                    <h3 id="totalProducts">-</h3>
+                    <p>Sản phẩm</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="totalKeys">-</h3>
+                    <p>Keys tổng</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="availableKeys">-</h3>
+                    <p>Keys còn lại</p>
+                </div>
+            </div>
+
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('category')">Danh mục</button>
+                <button class="tab" onclick="switchTab('product')">Sản phẩm</button>
+                <button class="tab" onclick="switchTab('keys')">Nhập Keys</button>
+                <button class="tab" onclick="switchTab('bulk')">Nhập hàng loạt</button>
+                <button class="tab" onclick="switchTab('viewkeys')">Xem Keys</button>
+                <button class="tab" onclick="switchTab('coupons')">Mã giảm giá</button>
+                <button class="tab" onclick="switchTab('manage')">Quản lý & Xóa</button>
+            </div>
+
+            <!-- Category Tab -->
+            <div id="category-tab" class="tab-content active">
+                <h2>➕ Thêm danh mục mới</h2>
+                <form id="categoryForm">
+                    <div class="form-group">
+                        <label for="catName">Tên danh mục:</label>
+                        <input type="text" id="catName" placeholder="Ví dụ: Cheats, Spotify Premium..." required>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="catActive" checked>
+                        <label for="catActive">Kích hoạt ngay</label>
+                    </div>
+                    <button type="submit" class="btn">Tạo danh mục</button>
+                </form>
+            </div>
+
+            <!-- Product Tab -->
+            <div id="product-tab" class="tab-content">
+                <h2>➕ Thêm sản phẩm mới</h2>
+                <form id="productForm">
+                    <div class="form-group">
+                        <label for="productName">Tên sản phẩm:</label>
+                        <input type="text" id="productName" placeholder="Ví dụ: Valorant Cheat 1 tháng" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="productPrice">Giá (VNĐ):</label>
+                        <input type="number" id="productPrice" placeholder="70000" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="productDiscount">Giảm giá (%):</label>
+                        <input type="number" id="productDiscount" placeholder="0" min="0" max="100" value="0">
+                        <small style="color: #666; font-size: 12px;">0 = Không giảm giá. Ví dụ: 20 = giảm 20%</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="productCategory">Danh mục:</label>
+                        <select id="productCategory">
+                            <option value="">Không chọn</option>
+                        </select>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="productActive" checked>
+                        <label for="productActive">Kích hoạt ngay</label>
+                    </div>
+                    <button type="submit" class="btn">Tạo sản phẩm</button>
+                </form>
+            </div>
+
+            <!-- Keys Tab -->
+            <div id="keys-tab" class="tab-content">
+                <h2>🔑 Nhập keys cho sản phẩm</h2>
+                <form id="keysForm">
+                    <div class="form-group">
+                        <label for="keyProduct">Chọn sản phẩm:</label>
+                        <select id="keyProduct" required>
+                            <option value="">-- Chọn sản phẩm --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="keysList">Danh sách keys (mỗi dòng 1 key):</label>
+                        <textarea id="keysList" placeholder="KEY-XXXX-XXXX-XXXX&#10;KEY-YYYY-YYYY-YYYY&#10;KEY-ZZZZ-ZZZZ-ZZZZ" required></textarea>
+                        <div class="key-preview" id="keyPreview"></div>
+                    </div>
+                    <button type="submit" class="btn">Nhập keys</button>
+                </form>
+            </div>
+
+            <!-- Bulk Import Tab -->
+            <div id="bulk-tab" class="tab-content">
+                <h2>📦 Nhập hàng loạt từ file</h2>
+                <div class="form-group">
+                    <label for="bulkProduct">Chọn sản phẩm:</label>
+                    <select id="bulkProduct" required>
+                        <option value="">-- Chọn sản phẩm --</option>
+                    </select>
+                </div>
+                <div class="file-upload" onclick="document.getElementById('fileInput').click()">
+                    <input type="file" id="fileInput" accept=".txt,.csv" onchange="handleFileUpload(event)">
+                    <p>📁 Kéo thả file hoặc click để chọn</p>
+                    <p style="font-size: 12px; opacity: 0.7; margin-top: 10px;">Hỗ trợ .txt và .csv (mỗi dòng 1 key)</p>
+                </div>
+                <div id="filePreview" style="margin-top: 20px;"></div>
+                <button id="bulkUploadBtn" class="btn" onclick="uploadBulkKeys()" style="display: none; margin-top: 20px;">
+                    Upload Keys
+                </button>
+            </div>
+
+            <!-- View All Keys Tab -->
+            <div id="viewkeys-tab" class="tab-content">
+                <h2>🔍 Xem Tất Cả Keys</h2>
+                
+                <!-- Filter Controls -->
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <div class="form-group">
+                            <label>Lọc theo sản phẩm:</label>
+                            <select id="filterProduct" onchange="filterKeys()">
+                                <option value="">Tất cả sản phẩm</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Lọc theo trạng thái:</label>
+                            <select id="filterStatus" onchange="filterKeys()">
+                                <option value="">Tất cả</option>
+                                <option value="unsold">Chỉ chưa bán</option>
+                                <option value="sold">Chỉ đã bán</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Tìm kiếm key:</label>
+                            <input type="text" id="searchKey" placeholder="Tìm key..." oninput="filterKeys()">
+                        </div>
+                    </div>
+                    <button class="btn" onclick="loadAllKeys()" style="margin-top: 10px;">🔄 Tải lại danh sách</button>
+                </div>
+
+                <!-- Keys Display -->
+                <div id="allKeysList" style="margin-top: 20px;"></div>
+            </div>
+
+            <!-- Coupons Tab -->
+            <div id="coupons-tab" class="tab-content">
+                <h2>🎟️ Quản lý mã giảm giá</h2>
+                
+                <!-- Create Coupon Form -->
+                <div class="panel">
+                    <h3>➕ Tạo mã giảm giá mới</h3>
+                    <form id="couponForm">
+                        <div class="form-group">
+                            <label for="couponCode">Mã giảm giá:</label>
+                            <input type="text" id="couponCode" placeholder="VD: SALE20, DISCOUNT50" style="text-transform: uppercase" required>
+                            <small style="color: #666; font-size: 12px;">Tự động chuyển thành chữ IN HOA</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="couponDiscount">% Giảm giá:</label>
+                            <input type="number" id="couponDiscount" placeholder="20" min="1" max="100" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="couponMaxUses">Số lần sử dụng tối đa:</label>
+                            <input type="number" id="couponMaxUses" placeholder="-1 = Không giới hạn" value="-1">
+                            <small style="color: #666; font-size: 12px;">-1 = Không giới hạn, >0 = Giới hạn số lần</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="couponExpiry">Ngày hết hạn (Tùy chọn):</label>
+                            <input type="datetime-local" id="couponExpiry">
+                            <small style="color: #666; font-size: 12px;">Để trống = Không hết hạn</small>
+                        </div>
+                        <div class="form-group checkbox-group">
+                            <input type="checkbox" id="couponActive" checked>
+                            <label for="couponActive">Kích hoạt ngay</label>
+                        </div>
+                        <button type="submit" class="btn">Tạo mã giảm giá</button>
+                    </form>
+                </div>
+
+                <!-- List Coupons -->
+                <div class="panel" style="margin-top: 20px;">
+                    <h3>📋 Danh sách mã giảm giá</h3>
+                    <button onclick="loadCoupons()" class="btn" style="margin-bottom: 15px;">🔄 Tải lại danh sách</button>
+                    <div id="couponsList"></div>
+                </div>
+            </div>
+
+            <!-- Manage & Delete Tab -->
+            <div id="manage-tab" class="tab-content">
+                <h2>🗑️ Quản lý & Xóa</h2>
+                
+                <div class="panel" style="background: #fff3cd; border: 2px solid #ffc107; margin-bottom: 20px;">
+                    <p style="color: #856404; margin: 0;">⚠️ <strong>Cảnh báo:</strong> Xóa là vĩnh viễn và không thể hoàn tác!</p>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                    <!-- Delete Category -->
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
+                        <h3 style="color: #dc3545; margin-top: 0;">🗑️ Xóa danh mục</h3>
+                        <div class="form-group">
+                            <label>Chọn danh mục:</label>
+                            <select id="deleteCategorySelect">
+                                <option value="">-- Chọn danh mục --</option>
+                            </select>
+                        </div>
+                        <button class="btn" style="background: #dc3545;" onclick="deleteCategory()">
+                            Xóa danh mục
+                        </button>
+                        <p style="font-size: 12px; opacity: 0.7; margin-top: 10px;">
+                            * Sản phẩm trong danh mục sẽ chuyển về "Không danh mục"
+                        </p>
+                    </div>
+
+                    <!-- Delete Product -->
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
+                        <h3 style="color: #dc3545; margin-top: 0;">🗑️ Xóa sản phẩm</h3>
+                        <div class="form-group">
+                            <label>Chọn sản phẩm:</label>
+                            <select id="deleteProductSelect">
+                                <option value="">-- Chọn sản phẩm --</option>
+                            </select>
+                        </div>
+                        <button class="btn" style="background: #dc3545;" onclick="deleteProduct()">
+                            Xóa sản phẩm
+                        </button>
+                        <p style="font-size: 12px; opacity: 0.7; margin-top: 10px;">
+                            * Tất cả keys của sản phẩm cũng sẽ bị xóa
+                        </p>
+                    </div>
+
+                    <!-- Delete Keys -->
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
+                        <h3 style="color: #dc3545; margin-top: 0;">🗑️ Xóa keys</h3>
+                        <div class="form-group">
+                            <label>Chọn sản phẩm:</label>
+                            <select id="deleteKeysProductSelect">
+                                <option value="">-- Chọn sản phẩm --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Xóa loại nào:</label>
+                            <select id="deleteKeysType">
+                                <option value="all">Tất cả keys</option>
+                                <option value="sold">Chỉ keys đã bán</option>
+                                <option value="unsold">Chỉ keys chưa bán</option>
+                            </select>
+                        </div>
+                        <button class="btn" style="background: #dc3545;" onclick="deleteKeys()">
+                            Xóa keys
+                        </button>
+                    </div>
+                </div>
+
+                <!-- View & Delete Individual Keys -->
+                <div style="margin-top: 30px; background: #f8f9fa; padding: 20px; border-radius: 10px;">
+                    <h3 style="color: #667eea; margin-top: 0;">📋 Xem, Sửa & Xóa Keys</h3>
+                    <div class="form-group">
+                        <label>Chọn sản phẩm:</label>
+                        <select id="viewKeysProductSelect" onchange="loadKeysForProduct()">
+                            <option value="">-- Chọn sản phẩm --</option>
+                        </select>
+                    </div>
+                    <div id="keysList" style="margin-top: 20px;"></div>
+                </div>
+
+                <!-- Replace Key -->
+                <div style="margin-top: 30px; background: #fff3cd; padding: 20px; border-radius: 10px; border: 2px solid #ffc107;">
+                    <h3 style="color: #856404; margin-top: 0;">🔄 Thay thế Key</h3>
+                    <p style="font-size: 14px; margin-bottom: 20px;">Tìm và thay thế key cũ bằng key mới (chỉ key chưa bán)</p>
+                    <form id="replaceKeyForm" style="display: grid; gap: 15px;">
+                        <div class="form-group">
+                            <label>Chọn sản phẩm:</label>
+                            <select id="replaceProductSelect" required>
+                                <option value="">-- Chọn sản phẩm --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Key cũ (cần thay thế):</label>
+                            <input type="text" id="replaceOldKey" placeholder="KEY-OLD-XXXX-XXXX" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Key mới:</label>
+                            <input type="text" id="replaceNewKey" placeholder="KEY-NEW-YYYY-YYYY" required>
+                        </div>
+                        <button type="submit" class="btn" style="background: #ffc107; color: #000;">
+                            🔄 Thay thế Key
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let fileContent = null;
+
+        // Load initial data
+        async function loadStats() {
+            try {
+                const res = await fetch(`${API_BASE}/admin/stats`);
+                const data = await res.json();
+                document.getElementById('totalProducts').textContent = data.totalProducts;
+                document.getElementById('totalKeys').textContent = data.totalKeys;
+                document.getElementById('availableKeys').textContent = data.availableKeys;
+            } catch (e) {
+                console.error('Load stats error:', e);
+            }
+        }
+
+        async function loadCategories() {
+            try {
+                const res = await fetch(`${API_BASE}/admin/categories`);
+                const categories = await res.json();
+                const select = document.getElementById('productCategory');
+                select.innerHTML = '<option value="">Không chọn</option>';
+                categories.forEach(cat => {
+                    select.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+                });
+            } catch (e) {
+                console.error('Load categories error:', e);
+            }
+        }
+
+        async function loadProducts() {
+            try {
+                const res = await fetch(`${API_BASE}/admin/products`);
+                const products = await res.json();
+                const selects = [
+                    document.getElementById('keyProduct'), 
+                    document.getElementById('bulkProduct'),
+                    document.getElementById('deleteProductSelect'),
+                    document.getElementById('deleteKeysProductSelect'),
+                    document.getElementById('viewKeysProductSelect'),
+                    document.getElementById('replaceProductSelect'),
+                    document.getElementById('filterProduct')
+                ];
+                selects.forEach(select => {
+                    if (select) {
+                        const isFilter = select.id === 'filterProduct';
+                        select.innerHTML = isFilter ? '<option value="">Tất cả sản phẩm</option>' : '<option value="">-- Chọn sản phẩm --</option>';
+                        products.forEach(p => {
+                            select.innerHTML += `<option value="${p.id}">${p.name} (ID: ${p.id}) - ${p.price.toLocaleString()}đ</option>`;
+                        });
+                    }
+                });
+            } catch (e) {
+                console.error('Load products error:', e);
+            }
+        }
+
+        // Global variable to store all keys
+        let allKeysData = [];
+
+        async function loadAllKeys() {
+            try {
+                const res = await fetch(`${API_BASE}/admin/allkeys`);
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}`);
+                }
+                const text = await res.text();
+                allKeysData = JSON.parse(text);
+                filterKeys();
+            } catch (e) {
+                console.error('Load keys error:', e);
+                document.getElementById('allKeysList').innerHTML = `
+                    <div style="text-align: center; padding: 40px;">
+                        <p style="color: #666; margin: 10px 0;">⚠️ Không thể tải danh sách keys</p>
+                        <button onclick="loadAllKeys()" class="btn" style="margin-top: 10px;">🔄 Thử lại</button>
+                    </div>
+                `;
+            }
+        }
+
+        function filterKeys() {
+            const filterProduct = document.getElementById('filterProduct').value;
+            const filterStatus = document.getElementById('filterStatus').value;
+            const searchKey = document.getElementById('searchKey').value.toLowerCase();
+
+            let filtered = allKeysData.filter(k => {
+                const matchProduct = !filterProduct || k.product_id == filterProduct;
+                const matchStatus = !filterStatus || 
+                    (filterStatus === 'sold' && k.is_sold === 1) || 
+                    (filterStatus === 'unsold' && k.is_sold === 0);
+                const matchSearch = !searchKey || k.key.toLowerCase().includes(searchKey);
+                return matchProduct && matchStatus && matchSearch;
+            });
+
+            displayKeys(filtered);
+        }
+
+        function displayKeys(keys) {
+            const container = document.getElementById('allKeysList');
+            
+            if (keys.length === 0) {
+                container.innerHTML = '<p style="text-align: center; opacity: 0.7;">Không tìm thấy key nào</p>';
+                return;
+            }
+
+            const unsold = keys.filter(k => k.is_sold === 0);
+            const sold = keys.filter(k => k.is_sold === 1);
+
+            container.innerHTML = `
+                <div style="margin-bottom: 30px;">
+                    <h3 style="color: #28a745;">✅ Keys chưa bán (${unsold.length})</h3>
+                    <div style="max-height: 500px; overflow-y: auto; background: white; padding: 15px; border-radius: 10px;">
+                        ${unsold.length === 0 ? '<p style="opacity: 0.7;">Không có</p>' : unsold.map(k => `
+                            <div id="allkey-row-${k.id}" style="display: grid; grid-template-columns: 150px 1fr auto; gap: 10px; align-items: center; padding: 12px; background: #f8f9fa; margin-bottom: 8px; border-radius: 8px; border: 2px solid #e9ecef;">
+                                <div>
+                                    <strong style="color: #667eea;">${k.product_name || 'Unknown'}</strong>
+                                    <div style="font-size: 11px; color: #6c757d;">ID: ${k.product_id} | Key ID: ${k.id}</div>
+                                </div>
+                                <input 
+                                    type="text" 
+                                    id="allkey-input-${k.id}" 
+                                    value="${k.key}" 
+                                    style="flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-family: 'Courier New', monospace; font-size: 13px;"
+                                    readonly
+                                />
+                                <div style="display: flex; gap: 5px;">
+                                    <button onclick="enableEditAll(${k.id})" id="alledit-btn-${k.id}" style="background: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; white-space: nowrap; font-size: 13px;">
+                                        ✏️ Sửa
+                                    </button>
+                                    <button onclick="saveKeyAll(${k.id})" id="allsave-btn-${k.id}" style="display: none; background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; white-space: nowrap; font-size: 13px;">
+                                        💾 Lưu
+                                    </button>
+                                    <button onclick="cancelEditAll(${k.id}, '${k.key}')" id="allcancel-btn-${k.id}" style="display: none; background: #6c757d; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; white-space: nowrap; font-size: 13px;">
+                                        ❌
+                                    </button>
+                                    <button onclick="deleteKeyAll(${k.id}, '${k.key}')" style="background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; white-space: nowrap; font-size: 13px;">
+                                        🗑️
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div>
+                    <h3 style="color: #6c757d;">❌ Keys đã bán (${sold.length})</h3>
+                    <div style="max-height: 300px; overflow-y: auto; background: white; padding: 15px; border-radius: 10px;">
+                        ${sold.length === 0 ? '<p style="opacity: 0.7;">Không có</p>' : sold.map(k => `
+                            <div style="display: grid; grid-template-columns: 150px 1fr auto; gap: 10px; align-items: center; padding: 12px; background: #f8f9fa; margin-bottom: 8px; border-radius: 8px; opacity: 0.6;">
+                                <div>
+                                    <strong style="color: #6c757d;">${k.product_name || 'Unknown'}</strong>
+                                    <div style="font-size: 11px; color: #6c757d;">ID: ${k.product_id} | Key ID: ${k.id}</div>
+                                </div>
+                                <code style="padding: 10px; font-family: 'Courier New', monospace; font-size: 13px;">${k.key}</code>
+                                <button onclick="deleteKeyAll(${k.id}, '${k.key}')" style="background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; white-space: nowrap; font-size: 13px;">
+                                    🗑️
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function enableEditAll(keyId) {
+            const input = document.getElementById(`allkey-input-${keyId}`);
+            const editBtn = document.getElementById(`alledit-btn-${keyId}`);
+            const saveBtn = document.getElementById(`allsave-btn-${keyId}`);
+            const cancelBtn = document.getElementById(`allcancel-btn-${keyId}`);
+            
+            input.readOnly = false;
+            input.style.borderColor = '#007bff';
+            input.style.background = 'white';
+            input.focus();
+            input.select();
+            
+            editBtn.style.display = 'none';
+            saveBtn.style.display = 'block';
+            cancelBtn.style.display = 'block';
+        }
+
+        function cancelEditAll(keyId, originalKey) {
+            const input = document.getElementById(`allkey-input-${keyId}`);
+            const editBtn = document.getElementById(`alledit-btn-${keyId}`);
+            const saveBtn = document.getElementById(`allsave-btn-${keyId}`);
+            const cancelBtn = document.getElementById(`allcancel-btn-${keyId}`);
+            
+            input.value = originalKey;
+            input.readOnly = true;
+            input.style.borderColor = '#ddd';
+            input.style.background = '#f8f9fa';
+            
+            editBtn.style.display = 'block';
+            saveBtn.style.display = 'none';
+            cancelBtn.style.display = 'none';
+        }
+
+        async function saveKeyAll(keyId) {
+            const input = document.getElementById(`allkey-input-${keyId}`);
+            const newKey = input.value.trim();
+            
+            if (!newKey) {
+                showAlert('❌ Key không được để trống', 'error');
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${API_BASE}/admin/key/${keyId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ newKey })
+                });
+                const data = await res.json();
+                
+                if (data.ok) {
+                    showAlert(`✅ Đã cập nhật key: ${data.oldKey} → ${data.newKey}`);
+                    
+                    // Update in local data
+                    const keyData = allKeysData.find(k => k.id === keyId);
+                    if (keyData) keyData.key = newKey;
+                    
+                    input.readOnly = true;
+                    input.style.borderColor = '#ddd';
+                    input.style.background = '#f8f9fa';
+                    
+                    document.getElementById(`alledit-btn-${keyId}`).style.display = 'block';
+                    document.getElementById(`allsave-btn-${keyId}`).style.display = 'none';
+                    document.getElementById(`allcancel-btn-${keyId}`).style.display = 'none';
+                    
+                    // Update cancel button
+                    const cancelBtn = document.getElementById(`allcancel-btn-${keyId}`);
+                    cancelBtn.setAttribute('onclick', `cancelEditAll(${keyId}, '${newKey}')`);
+                    
+                    loadStats();
+                } else {
+                    showAlert(`❌ Lỗi: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                showAlert(`❌ Lỗi kết nối: ${e.message}`, 'error');
+            }
+        }
+
+        async function deleteKeyAll(keyId, keyText) {
+            if (!confirm(`⚠️ Xóa key: ${keyText}?`)) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/admin/key/${keyId}`, {
+                    method: 'DELETE'
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    showAlert(`✅ Đã xóa key`);
+                    
+                    // Remove from local data
+                    allKeysData = allKeysData.filter(k => k.id !== keyId);
+                    filterKeys();
+                    loadStats();
+                } else {
+                    showAlert(`❌ Lỗi: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                showAlert(`❌ Lỗi kết nối: ${e.message}`, 'error');
+            }
+        }
+
+        async function loadCategoriesForDelete() {
+            try {
+                const res = await fetch(`${API_BASE}/admin/categories`);
+                const categories = await res.json();
+                const select = document.getElementById('deleteCategorySelect');
+                if (select) {
+                    select.innerHTML = '<option value="">-- Chọn danh mục --</option>';
+                    categories.forEach(cat => {
+                        select.innerHTML += `<option value="${cat.id}">${cat.name} (ID: ${cat.id})</option>`;
+                    });
+                }
+            } catch (e) {
+                console.error('Load categories error:', e);
+            }
+        }
+
+        function showAlert(message, type = 'success') {
+            const alert = document.getElementById('alert');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `
+                ${message}
+                <button onclick="this.parentElement.style.display='none'" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 20px; cursor: pointer; color: inherit; opacity: 0.8; padding: 0; width: 24px; height: 24px;">×</button>
+            `;
+            alert.style.display = 'block';
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 3000);
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+
+        // Category Form
+        document.getElementById('categoryForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('catName').value;
+            const active = document.getElementById('catActive').checked;
+
+            try {
+                const res = await fetch(`${API_BASE}/admin/category`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, active })
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    showAlert(`✅ Đã tạo danh mục "${name}" (ID: ${data.id})`);
+                    document.getElementById('categoryForm').reset();
+                    document.getElementById('catActive').checked = true;
+                    loadCategories();
+                    loadStats();
+                } else {
+                    showAlert(`❌ Lỗi: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                showAlert(`❌ Lỗi kết nối: ${e.message}`, 'error');
+            }
+        });
+
+        // Product Form
+        document.getElementById('productForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('productName').value;
+            const price = parseInt(document.getElementById('productPrice').value);
+            const discount = parseInt(document.getElementById('productDiscount').value) || 0;
+            const active = document.getElementById('productActive').checked;
+            const categoryId = document.getElementById('productCategory').value || null;
+
+            try {
+                const res = await fetch(`${API_BASE}/admin/product`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, price, discount, active, categoryId })
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    const finalPrice = discount > 0 ? Math.floor(price * (100 - discount) / 100) : price;
+                    const priceStr = discount > 0 
+                        ? `${price.toLocaleString()}đ → ${finalPrice.toLocaleString()}đ (-${discount}%)`
+                        : `${price.toLocaleString()}đ`;
+                    showAlert(`✅ Đã tạo sản phẩm "${name}" (ID: ${data.id}) - ${priceStr}`);
+                    document.getElementById('productForm').reset();
+                    document.getElementById('productActive').checked = true;
+                    document.getElementById('productDiscount').value = 0;
+                    loadProducts();
+                    loadStats();
+                } else {
+                    showAlert(`❌ Lỗi: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                showAlert(`❌ Lỗi kết nối: ${e.message}`, 'error');
+            }
+        });
+
+        // Keys Form
+        document.getElementById('keysList').addEventListener('input', (e) => {
+            const keys = e.target.value.split('\n').filter(k => k.trim());
+            document.getElementById('keyPreview').textContent = 
+                `📊 Tổng: ${keys.length} keys${keys.length > 0 ? '\n\nPreview:\n' + keys.slice(0, 5).join('\n') + (keys.length > 5 ? '\n...' : '') : ''}`;
+        });
+
+        document.getElementById('keysForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const productId = parseInt(document.getElementById('keyProduct').value);
+            const keysText = document.getElementById('keysList').value;
+            const keys = keysText.split('\n').filter(k => k.trim());
+
+            if (keys.length === 0) {
+                showAlert('❌ Vui lòng nhập ít nhất 1 key', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/admin/keys`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ productId, keys })
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    showAlert(`✅ Đã nhập ${data.count} keys cho sản phẩm ID ${productId}`);
+                    document.getElementById('keysForm').reset();
+                    document.getElementById('keyPreview').textContent = '';
+                    loadStats();
+                } else {
+                    showAlert(`❌ Lỗi: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                showAlert(`❌ Lỗi kết nối: ${e.message}`, 'error');
+            }
+        });
+
+        // File Upload
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                fileContent = e.target.result;
+                const keys = fileContent.split('\n').filter(k => k.trim());
+                document.getElementById('filePreview').innerHTML = `
+                    <div style="background: #d4edda; padding: 15px; border-radius: 8px; color: #155724;">
+                        <strong>📄 File: ${file.name}</strong><br>
+                        <strong>📊 Tổng keys: ${keys.length}</strong><br>
+                        <div style="margin-top: 10px; font-family: monospace; font-size: 12px; max-height: 150px; overflow-y: auto;">
+                            ${keys.slice(0, 10).join('<br>')}
+                            ${keys.length > 10 ? '<br>...' : ''}
+                        </div>
+                    </div>
+                `;
+                document.getElementById('bulkUploadBtn').style.display = 'block';
+            };
+            reader.readAsText(file);
+        }
+
+        async function uploadBulkKeys() {
+            const productId = parseInt(document.getElementById('bulkProduct').value);
+            if (!productId) {
+                showAlert('❌ Vui lòng chọn sản phẩm', 'error');
+                return;
+            }
+            if (!fileContent) {
+                showAlert('❌ Vui lòng chọn file', 'error');
+                return;
+            }
+
+            const keys = fileContent.split('\n').filter(k => k.trim());
+            try {
+                const res = await fetch(`${API_BASE}/admin/keys`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ productId, keys })
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    showAlert(`✅ Đã upload ${data.count} keys cho sản phẩm ID ${productId}`);
+                    document.getElementById('fileInput').value = '';
+                    document.getElementById('filePreview').innerHTML = '';
+                    document.getElementById('bulkUploadBtn').style.display = 'none';
+                    fileContent = null;
+                    loadStats();
+                } else {
+                    showAlert(`❌ Lỗi: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                showAlert(`❌ Lỗi kết nối: ${e.message}`, 'error');
+            }
+        }
+
+        // Delete functions
+        async function deleteCategory() {
+            const categoryId = document.getElementById('deleteCategorySelect').value;
+            if (!categoryId) {
+                showAlert('❌ Vui lòng chọn danh mục', 'error');
+                return;
+            }
+
+            if (!confirm('⚠️ Bạn có chắc muốn xóa danh mục này?\nSản phẩm trong danh mục sẽ chuyển về "Không danh mục".')) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/admin/category/${categoryId}`, {
+                    method: 'DELETE'
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    showAlert(`✅ Đã xóa danh mục ID ${categoryId}`);
+                    document.getElementById('deleteCategorySelect').value = '';
+                    loadCategories();
+                    loadCategoriesForDelete();
+                    loadStats();
+                } else {
+                    showAlert(`❌ Lỗi: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                showAlert(`❌ Lỗi kết nối: ${e.message}`, 'error');
+            }
+        }
+
+        async function deleteProduct() {
+            const productId = document.getElementById('deleteProductSelect').value;
+            if (!productId) {
+                showAlert('❌ Vui lòng chọn sản phẩm', 'error');
+                return;
+            }
+
+            if (!confirm('⚠️ Bạn có chắc muốn xóa sản phẩm này?\nTất cả keys của sản phẩm cũng sẽ bị xóa vĩnh viễn!')) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/admin/product/${productId}`, {
+                    method: 'DELETE'
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    showAlert(`✅ Đã xóa sản phẩm ID ${productId} (và ${data.keysDeleted} keys)`);
+                    document.getElementById('deleteProductSelect').value = '';
+                    loadProducts();
+                    loadStats();
+                } else {
+                    showAlert(`❌ Lỗi: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                showAlert(`❌ Lỗi kết nối: ${e.message}`, 'error');
+            }
+        }
+
+        async function deleteKeys() {
+            const productId = document.getElementById('deleteKeysProductSelect').value;
+            const type = document.getElementById('deleteKeysType').value;
+            
+            if (!productId) {
+                showAlert('❌ Vui lòng chọn sản phẩm', 'error');
+                return;
+            }
+
+            const typeText = type === 'all' ? 'TẤT CẢ keys' : 
+                           type === 'sold' ? 'keys ĐÃ BÁN' : 'keys CHƯA BÁN';
+            
+            if (!confirm(`⚠️ Bạn có chắc muốn xóa ${typeText} của sản phẩm này?`)) {
+                return;
+            }
+
+            try {
+                const onlySold = type === 'sold' ? 'true' : type === 'unsold' ? 'false' : '';
+                const res = await fetch(`${API_BASE}/admin/keys/${productId}${onlySold ? '?onlySold=' + onlySold : ''}`, {
+                    method: 'DELETE'
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    showAlert(`✅ Đã xóa ${data.deleted} keys`);
+                    document.getElementById('deleteKeysProductSelect').value = '';
+                    loadStats();
+                    if (document.getElementById('viewKeysProductSelect').value == productId) {
+                        loadKeysForProduct();
+                    }
+                } else {
+                    showAlert(`❌ Lỗi: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                showAlert(`❌ Lỗi kết nối: ${e.message}`, 'error');
+            }
+        }
+
+        async function loadKeysForProduct() {
+            const productId = document.getElementById('viewKeysProductSelect').value;
+            const keysList = document.getElementById('keysList');
+            
+            if (!productId) {
+                keysList.innerHTML = '';
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/admin/keys/${productId}`);
+                const keys = await res.json();
+                
+                if (keys.length === 0) {
+                    keysList.innerHTML = '<p style="text-align: center; opacity: 0.7;">Không có key nào</p>';
+                    return;
+                }
+
+                const unsold = keys.filter(k => k.is_sold === 0);
+                const sold = keys.filter(k => k.is_sold === 1);
+
+                keysList.innerHTML = `
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="color: #28a745;">✅ Keys chưa bán (${unsold.length})</h4>
+                        <div style="max-height: 400px; overflow-y: auto;">
+                            ${unsold.map(k => `
+                                <div id="key-row-${k.id}" style="display: flex; gap: 10px; align-items: center; padding: 10px; background: white; margin-bottom: 5px; border-radius: 5px;">
+                                    <input 
+                                        type="text" 
+                                        id="key-input-${k.id}" 
+                                        value="${k.key}" 
+                                        style="flex: 1; padding: 8px; border: 2px solid #ddd; border-radius: 5px; font-family: monospace;"
+                                        readonly
+                                    />
+                                    <button onclick="enableEdit(${k.id})" id="edit-btn-${k.id}" style="background: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; white-space: nowrap;">
+                                        ✏️ Sửa
+                                    </button>
+                                    <button onclick="saveKey(${k.id})" id="save-btn-${k.id}" style="display: none; background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; white-space: nowrap;">
+                                        💾 Lưu
+                                    </button>
+                                    <button onclick="cancelEdit(${k.id}, '${k.key}')" id="cancel-btn-${k.id}" style="display: none; background: #6c757d; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; white-space: nowrap;">
+                                        ❌ Hủy
+                                    </button>
+                                    <button onclick="deleteIndividualKey(${k.id}, '${k.key}')" style="background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; white-space: nowrap;">
+                                        🗑️ Xóa
+                                    </button>
+                                </div>
+                            `).join('') || '<p style="opacity: 0.7;">Không có</p>'}
+                        </div>
+                    </div>
+                    <div>
+                        <h4 style="color: #6c757d;">❌ Keys đã bán (${sold.length})</h4>
+                        <div style="max-height: 200px; overflow-y: auto;">
+                            ${sold.map(k => `
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f8f9fa; margin-bottom: 5px; border-radius: 5px; opacity: 0.7;">
+                                    <code style="flex: 1;">${k.key}</code>
+                                    <button onclick="deleteIndividualKey(${k.id}, '${k.key}')" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">
+                                        🗑️ Xóa
+                                    </button>
+                                </div>
+                            `).join('') || '<p style="opacity: 0.7;">Không có</p>'}
+                        </div>
+                    </div>
+                `;
+            } catch (e) {
+                keysList.innerHTML = `<p style="color: #dc3545;">❌ Lỗi: ${e.message}</p>`;
+            }
+        }
+
+        function enableEdit(keyId) {
+            const input = document.getElementById(`key-input-${keyId}`);
+            const editBtn = document.getElementById(`edit-btn-${keyId}`);
+            const saveBtn = document.getElementById(`save-btn-${keyId}`);
+            const cancelBtn = document.getElementById(`cancel-btn-${keyId}`);
+            
+            input.readOnly = false;
+            input.style.borderColor = '#007bff';
+            input.focus();
+            input.select();
+            
+            editBtn.style.display = 'none';
+            saveBtn.style.display = 'block';
+            cancelBtn.style.display = 'block';
+        }
+
+        function cancelEdit(keyId, originalKey) {
+            const input = document.getElementById(`key-input-${keyId}`);
+            const editBtn = document.getElementById(`edit-btn-${keyId}`);
+            const saveBtn = document.getElementById(`save-btn-${keyId}`);
+            const cancelBtn = document.getElementById(`cancel-btn-${keyId}`);
+            
+            input.value = originalKey;
+            input.readOnly = true;
+            input.style.borderColor = '#ddd';
+            
+            editBtn.style.display = 'block';
+            saveBtn.style.display = 'none';
+            cancelBtn.style.display = 'none';
+        }
+
+        async function saveKey(keyId) {
+            const input = document.getElementById(`key-input-${keyId}`);
+            const newKey = input.value.trim();
+            
+            if (!newKey) {
+                showAlert('❌ Key không được để trống', 'error');
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${API_BASE}/admin/key/${keyId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ newKey })
+                });
+                const data = await res.json();
+                
+                if (data.ok) {
+                    showAlert(`✅ Đã cập nhật key: ${data.oldKey} → ${data.newKey}`);
+                    input.readOnly = true;
+                    input.style.borderColor = '#ddd';
+                    
+                    document.getElementById(`edit-btn-${keyId}`).style.display = 'block';
+                    document.getElementById(`save-btn-${keyId}`).style.display = 'none';
+                    document.getElementById(`cancel-btn-${keyId}`).style.display = 'none';
+                    
+                    // Update cancel button with new original value
+                    const cancelBtn = document.getElementById(`cancel-btn-${keyId}`);
+                    cancelBtn.setAttribute('onclick', `cancelEdit(${keyId}, '${newKey}')`);
+                    
+                    loadStats();
+                } else {
+                    showAlert(`❌ Lỗi: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                showAlert(`❌ Lỗi kết nối: ${e.message}`, 'error');
+            }
+        }
+
+        async function deleteIndividualKey(keyId, keyText) {
+            if (!confirm(`⚠️ Xóa key: ${keyText}?`)) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/admin/key/${keyId}`, {
+                    method: 'DELETE'
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    showAlert(`✅ Đã xóa key`);
+                    loadKeysForProduct();
+                    loadStats();
+                } else {
+                    showAlert(`❌ Lỗi: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                showAlert(`❌ Lỗi kết nối: ${e.message}`, 'error');
+            }
+        }
+
+        // Replace Key Form
+        document.getElementById('replaceKeyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const productId = parseInt(document.getElementById('replaceProductSelect').value);
+            const oldKey = document.getElementById('replaceOldKey').value.trim();
+            const newKey = document.getElementById('replaceNewKey').value.trim();
+            
+            if (!productId) {
+                showAlert('❌ Vui lòng chọn sản phẩm', 'error');
+                return;
+            }
+            
+            if (!oldKey || !newKey) {
+                showAlert('❌ Vui lòng nhập key cũ và key mới', 'error');
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${API_BASE}/admin/key/replace`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ productId, oldKey, newKey })
+                });
+                const data = await res.json();
+                
+                if (data.ok) {
+                    showAlert(`✅ Đã thay thế key: ${oldKey} → ${newKey}`);
+                    document.getElementById('replaceKeyForm').reset();
+                    
+                    // Reload keys list if viewing the same product
+                    const viewingProductId = document.getElementById('viewKeysProductSelect').value;
+                    if (viewingProductId == productId) {
+                        loadKeysForProduct();
+                    }
+                    loadStats();
+                } else {
+                    showAlert(`❌ Lỗi: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                showAlert(`❌ Lỗi kết nối: ${e.message}`, 'error');
+            }
+        });
+
+        // Coupon Form
+        document.getElementById('couponForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const code = document.getElementById('couponCode').value.trim().toUpperCase();
+            const discount = parseInt(document.getElementById('couponDiscount').value);
+            const maxUses = parseInt(document.getElementById('couponMaxUses').value);
+            const expiry = document.getElementById('couponExpiry').value || null;
+            const active = document.getElementById('couponActive').checked;
+
+            try {
+                const res = await fetch(`${API_BASE}/admin/coupon`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code, discount, maxUses, expiry, active })
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    showAlert(`✅ Đã tạo mã giảm giá "${code}" (-${discount}%)`);
+                    document.getElementById('couponForm').reset();
+                    document.getElementById('couponActive').checked = true;
+                    document.getElementById('couponMaxUses').value = -1;
+                    loadCoupons();
+                } else {
+                    showAlert(`❌ Lỗi: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                showAlert(`❌ Lỗi kết nối: ${e.message}`, 'error');
+            }
+        });
+
+        async function loadCoupons() {
+            try {
+                const res = await fetch(`${API_BASE}/admin/coupons`);
+                const coupons = await res.json();
+                const container = document.getElementById('couponsList');
+                
+                if (coupons.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; opacity: 0.7;">Chưa có mã giảm giá nào</p>';
+                    return;
+                }
+
+                container.innerHTML = coupons.map(c => {
+                    const expired = c.expires_at && new Date(c.expires_at) < new Date();
+                    const maxedOut = c.max_uses > 0 && c.used_count >= c.max_uses;
+                    const status = !c.active ? '🔴 Tắt' : expired ? '⏰ Hết hạn' : maxedOut ? '🚫 Hết lượt' : '🟢 Hoạt động';
+                    
+                    return `
+                        <div class="panel" style="background: ${c.active && !expired && !maxedOut ? '#d4edda' : '#f8d7da'}; margin-bottom: 10px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <h4 style="margin: 0 0 5px 0;">🎟️ ${c.code}</h4>
+                                    <p style="margin: 5px 0;">Giảm: <strong>${c.discount_percent}%</strong></p>
+                                    <p style="margin: 5px 0;">Đã dùng: <strong>${c.used_count}</strong>${c.max_uses > 0 ? ` / ${c.max_uses}` : ' (Không giới hạn)'}</p>
+                                    ${c.expires_at ? `<p style="margin: 5px 0;">Hết hạn: ${new Date(c.expires_at).toLocaleString('vi-VN')}</p>` : '<p style="margin: 5px 0;">Không hết hạn</p>'}
+                                    <p style="margin: 5px 0;">Trạng thái: ${status}</p>
+                                </div>
+                                <div>
+                                    <button onclick="toggleCoupon('${c.code}', ${!c.active})" class="btn" style="background: ${c.active ? '#dc3545' : '#28a745'}; margin-right: 5px;">
+                                        ${c.active ? '❌ Tắt' : '✅ Bật'}
+                                    </button>
+                                    <button onclick="deleteCoupon('${c.code}')" class="btn" style="background: #dc3545;">🗑️ Xóa</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                document.getElementById('couponsList').innerHTML = `<p style="color: #dc3545;">❌ Lỗi: ${e.message}</p>`;
+            }
+        }
+
+        async function toggleCoupon(code, active) {
+            if (!confirm(`${active ? 'Bật' : 'Tắt'} mã giảm giá ${code}?`)) return;
+            
+            try {
+                const res = await fetch(`${API_BASE}/admin/coupon/${code}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ active })
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    showAlert(`✅ Đã ${active ? 'bật' : 'tắt'} mã ${code}`);
+                    loadCoupons();
+                } else {
+                    showAlert(`❌ Lỗi: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                showAlert(`❌ Lỗi: ${e.message}`, 'error');
+            }
+        }
+
+        async function deleteCoupon(code) {
+            if (!confirm(`XÓA VĨNH VIỄN mã giảm giá ${code}?`)) return;
+            
+            try {
+                const res = await fetch(`${API_BASE}/admin/coupon/${code}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.ok) {
+                    showAlert(`✅ Đã xóa mã ${code}`);
+                    loadCoupons();
+                } else {
+                    showAlert(`❌ Lỗi: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                showAlert(`❌ Lỗi: ${e.message}`, 'error');
+            }
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            loadStats();
+            loadCategories();
+            loadProducts();
+            loadCategoriesForDelete();
+        });
+    </script>
+</body>
+</html>

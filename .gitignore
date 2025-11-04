@@ -1,0 +1,30 @@
+# Environment variables (QUAN TRỌNG - KHÔNG COMMIT FILE NÀY!)
+.env
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+
+# Dependencies
+node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build outputs
+dist/
+build/

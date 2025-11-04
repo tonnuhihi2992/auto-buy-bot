@@ -1,0 +1,20 @@
+{
+  "name": "auto-buy-bot",
+  "version": "1.0.0",
+  "description": "Discord auto purchase bot (VietQR -> webhook/xacnhan -> DM key)",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "register": "node register-commands.js"
+  },
+  "dependencies": {
+    "axios": "^1.13.1",
+    "better-sqlite3": "^9.0.0",
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.6.1",
+    "express": "^4.19.2",
+    "node-cron": "^4.2.1",
+    "qrcode": "^1.5.3"
+  }
+}
