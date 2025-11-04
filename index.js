@@ -577,6 +577,70 @@ app.post('/admin/key/replace', (req, res) => {
   }
 });
 
+// ===== Backup & Restore Database =====
+app.get('/admin/backup', (req, res) => {
+  try {
+    const backup = {
+      categories: db.prepare('SELECT * FROM categories').all(),
+      products: db.prepare('SELECT * FROM products').all(),
+      keys: db.prepare('SELECT * FROM keys WHERE is_sold = 0').all(),
+      coupons: db.prepare('SELECT * FROM coupons').all(),
+      timestamp: Date.now()
+    };
+    res.json(backup);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/admin/restore', (req, res) => {
+  try {
+    const { categories, products, keys, coupons } = req.body;
+    
+    // Clear existing data
+    db.exec('DELETE FROM keys');
+    db.exec('DELETE FROM products');
+    db.exec('DELETE FROM categories');
+    db.exec('DELETE FROM coupons');
+    
+    // Restore categories
+    if (categories && categories.length > 0) {
+      const insertCat = db.prepare('INSERT INTO categories (id, name, active) VALUES (?, ?, ?)');
+      for (const cat of categories) {
+        insertCat.run(cat.id, cat.name, cat.active);
+      }
+    }
+    
+    // Restore products
+    if (products && products.length > 0) {
+      const insertProd = db.prepare('INSERT INTO products (id, name, price, discount_percent, active, category_id) VALUES (?, ?, ?, ?, ?, ?)');
+      for (const prod of products) {
+        insertProd.run(prod.id, prod.name, prod.price, prod.discount_percent, prod.active, prod.category_id);
+      }
+    }
+    
+    // Restore keys
+    if (keys && keys.length > 0) {
+      const insertKey = db.prepare('INSERT INTO keys (id, product_id, key, is_sold) VALUES (?, ?, ?, ?)');
+      for (const key of keys) {
+        insertKey.run(key.id, key.product_id, key.key, key.is_sold);
+      }
+    }
+    
+    // Restore coupons
+    if (coupons && coupons.length > 0) {
+      const insertCoupon = db.prepare('INSERT INTO coupons (code, discount_percent, max_uses, used_count, active, expires_at) VALUES (?, ?, ?, ?, ?, ?)');
+      for (const coupon of coupons) {
+        insertCoupon.run(coupon.code, coupon.discount_percent, coupon.max_uses, coupon.used_count, coupon.active, coupon.expires_at);
+      }
+    }
+    
+    res.json({ ok: true, message: 'Database restored successfully' });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // ===== Webhooks tự động xác nhận thanh toán =====
 // 1) Chuẩn chung: POST /webhook/payment  (body đã có orderId, amount, paid=true)
 app.post('/webhook/payment', async (req, res) => {

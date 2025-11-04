@@ -231,6 +231,7 @@
                 <button class="tab" onclick="switchTab('viewkeys')">Xem Keys</button>
                 <button class="tab" onclick="switchTab('coupons')">Mã giảm giá</button>
                 <button class="tab" onclick="switchTab('manage')">Quản lý & Xóa</button>
+                <button class="tab" onclick="switchTab('backup')" style="background: #f39c12;">💾 Backup</button>
             </div>
 
             <!-- Category Tab -->
@@ -498,12 +499,114 @@
                     </form>
                 </div>
             </div>
+
+            <!-- Backup & Restore Tab -->
+            <div id="backup-tab" class="tab-content">
+                <h2>💾 Backup & Restore Database</h2>
+                <p style="color: #e74c3c; margin-bottom: 20px; font-weight: bold;">
+                    ⚠️ QUAN TRỌNG: Render.com xóa database mỗi khi redeploy! Hãy backup trước khi deploy.
+                </p>
+                
+                <div style="display: grid; gap: 30px;">
+                    <!-- Backup Section -->
+                    <div class="panel" style="background: #ecf0f1; padding: 20px;">
+                        <h3 style="color: #27ae60;">📥 Tải xuống Backup</h3>
+                        <p style="margin: 10px 0;">Lưu toàn bộ danh mục, sản phẩm, keys và mã giảm giá</p>
+                        <button onclick="downloadBackup()" class="btn" style="background: #27ae60;">
+                            💾 Tải Backup File
+                        </button>
+                    </div>
+
+                    <!-- Restore Section -->
+                    <div class="panel" style="background: #fff3cd; padding: 20px;">
+                        <h3 style="color: #f39c12;">📤 Khôi phục từ Backup</h3>
+                        <p style="margin: 10px 0; color: #856404;">
+                            ⚠️ Cảnh báo: Sẽ XÓA toàn bộ data hiện tại và thay bằng backup!
+                        </p>
+                        <div class="form-group">
+                            <label>Chọn file backup (JSON):</label>
+                            <input type="file" id="restoreFile" accept=".json" style="padding: 10px; border: 2px solid #f39c12;">
+                        </div>
+                        <button onclick="restoreBackup()" class="btn" style="background: #f39c12; color: #000;">
+                            🔄 Khôi phục Database
+                        </button>
+                    </div>
+
+                    <!-- Instructions -->
+                    <div class="panel" style="background: #e3f2fd; padding: 20px;">
+                        <h3 style="color: #2196f3;">📖 Hướng dẫn sử dụng</h3>
+                        <ol style="margin-left: 20px; line-height: 1.8;">
+                            <li>Click <strong>"Tải Backup File"</strong> để lưu data hiện tại (file .json)</li>
+                            <li>Lưu file backup vào máy tính</li>
+                            <li>Sau khi redeploy trên Render.com, vào lại trang này</li>
+                            <li>Click <strong>"Chọn file backup"</strong> và chọn file đã lưu</li>
+                            <li>Click <strong>"Khôi phục Database"</strong></li>
+                        </ol>
+                        <p style="margin-top: 15px; color: #1976d2; font-weight: bold;">
+                            💡 Mẹo: Backup thường xuyên trước mỗi lần deploy!
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
         const API_BASE = window.location.origin;
         let fileContent = null;
+
+        // Backup & Restore Functions
+        async function downloadBackup() {
+            try {
+                const res = await fetch(`${API_BASE}/admin/backup`);
+                const backup = await res.json();
+                
+                const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `auto-buy-backup-${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                showAlert('✅ Đã tải backup thành công!');
+            } catch (e) {
+                showAlert(`❌ Lỗi tải backup: ${e.message}`, 'error');
+            }
+        }
+
+        async function restoreBackup() {
+            const fileInput = document.getElementById('restoreFile');
+            if (!fileInput.files.length) {
+                return showAlert('⚠️ Vui lòng chọn file backup!', 'error');
+            }
+
+            if (!confirm('⚠️ CẢNH BÁO: Sẽ XÓA toàn bộ data hiện tại!\n\nBạn có chắc chắn muốn khôi phục từ backup?')) {
+                return;
+            }
+
+            try {
+                const file = fileInput.files[0];
+                const text = await file.text();
+                const backup = JSON.parse(text);
+
+                const res = await fetch(`${API_BASE}/admin/restore`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(backup)
+                });
+
+                const data = await res.json();
+                if (data.ok) {
+                    showAlert('✅ Khôi phục thành công! Đang tải lại trang...');
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    showAlert(`❌ Lỗi: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                showAlert(`❌ Lỗi khôi phục: ${e.message}`, 'error');
+            }
+        }
 
         // Load initial data
         async function loadStats() {
