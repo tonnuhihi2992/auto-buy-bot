@@ -396,6 +396,12 @@ app.post('/admin/keys', (req, res) => {
       return res.status(400).json({ ok: false, error: 'productId and keys array required' });
     }
     
+    // Check if product exists
+    const product = db.prepare('SELECT id FROM products WHERE id = ?').get(productId);
+    if (!product) {
+      return res.status(404).json({ ok: false, error: 'Sản phẩm không tồn tại. Vui lòng tạo sản phẩm trước!' });
+    }
+    
     const insert = db.prepare('INSERT INTO keys(product_id, key, is_sold) VALUES(?, ?, 0)');
     const insertMany = db.transaction((keysArray) => {
       for (const key of keysArray) {
