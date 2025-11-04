@@ -704,25 +704,31 @@ client.once(Events.ClientReady, () => {
   console.log(`✅ Bot Online: ${client.user.tag}`);
   sendShop();
   
-  // Start auto payment checker
-  startAutoChecker(async (order, orderId) => {
-    try {
-      // Xóa QR tracking
-      activeQRMessages.delete(order.user_id);
-      
-      // Gửi key cho user
-      await dmKeys({ 
-        userId: order.user_id, 
-        productId: order.product_id, 
-        qty: order.qty, 
-        orderId 
-      });
-      
-      console.log(`✅ Auto-sent keys for order ${orderId} to user ${order.user_id}`);
-    } catch (e) {
-      console.error(`Failed to send keys for ${orderId}:`, e);
-    }
-  });
+  // Start auto payment checker (only if API key is configured)
+  const CASSO_API_KEY = process.env.CASSO_API_KEY || '';
+  if (CASSO_API_KEY && CASSO_API_KEY.trim()) {
+    console.log('✅ Starting auto payment checker with Casso.vn...');
+    startAutoChecker(async (order, orderId) => {
+      try {
+        // Xóa QR tracking
+        activeQRMessages.delete(order.user_id);
+        
+        // Gửi key cho user
+        await dmKeys({ 
+          userId: order.user_id, 
+          productId: order.product_id, 
+          qty: order.qty, 
+          orderId 
+        });
+        
+        console.log(`✅ Auto-sent keys for order ${orderId} to user ${order.user_id}`);
+      } catch (e) {
+        console.error(`Failed to send keys for ${orderId}:`, e);
+      }
+    });
+  } else {
+    console.log('ℹ️  Auto payment checker disabled (no CASSO_API_KEY). Use /admin_confirm for manual confirmation.');
+  }
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
